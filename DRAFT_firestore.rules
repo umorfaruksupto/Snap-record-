@@ -1,0 +1,288 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Pillar 1 & Phase 4.1: Global Default-Deny Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Phase 3: Hardened Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Pillar 2: Validation Blueprints
+    function isValidUserPublicProfile(data, userId) {
+      return data.keys().hasAll([
+          'uid',
+          'displayName',
+          'driveFolder',
+          'driveConnected',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'uid',
+          'displayName',
+          'driveFolder',
+          'driveConnected',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.uid is string &&
+        data.uid.size() >= 1 &&
+        data.uid.size() <= 128 &&
+        data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.uid == userId &&
+        data.uid == request.auth.uid &&
+        data.displayName is string &&
+        data.displayName.size() >= 1 &&
+        data.displayName.size() <= 100 &&
+        data.driveFolder is string &&
+        data.driveFolder.size() >= 1 &&
+        data.driveFolder.size() <= 120 &&
+        data.driveConnected is bool &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp &&
+        data.updatedAt == request.time;
+    }
+
+    function isValidUserPrivateInfo(data, userId) {
+      return data.keys().hasAll(['uid', 'email', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'email', 'updatedAt']) &&
+        data.uid is string &&
+        data.uid.size() >= 1 &&
+        data.uid.size() <= 128 &&
+        data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.uid == userId &&
+        data.uid == request.auth.uid &&
+        data.email is string &&
+        data.email.size() >= 3 &&
+        data.email.size() <= 254 &&
+        data.email == request.auth.token.email &&
+        data.updatedAt is timestamp &&
+        data.updatedAt == request.time;
+    }
+
+    function isValidRecordingDocument(data, recordingId) {
+      return data.keys().hasAll([
+          'id',
+          'ownerId',
+          'ownerName',
+          'title',
+          'description',
+          'durationSec',
+          'sizeBytes',
+          'resolution',
+          'captureMode',
+          'containerFormat',
+          'driveSynced',
+          'driveFileId',
+          'driveWebViewLink',
+          'shareAccess',
+          'transcript',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id',
+          'ownerId',
+          'ownerName',
+          'title',
+          'description',
+          'durationSec',
+          'sizeBytes',
+          'resolution',
+          'captureMode',
+          'containerFormat',
+          'driveSynced',
+          'driveFileId',
+          'driveWebViewLink',
+          'shareAccess',
+          'transcript',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.id is string &&
+        data.id.size() >= 1 &&
+        data.id.size() <= 128 &&
+        data.id.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.id == recordingId &&
+        data.ownerId is string &&
+        data.ownerId.size() >= 1 &&
+        data.ownerId.size() <= 128 &&
+        data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.ownerId == request.auth.uid &&
+        data.ownerName is string &&
+        data.ownerName.size() >= 1 &&
+        data.ownerName.size() <= 100 &&
+        data.title is string &&
+        data.title.size() >= 1 &&
+        data.title.size() <= 160 &&
+        data.description is string &&
+        data.description.size() >= 0 &&
+        data.description.size() <= 1000 &&
+        data.durationSec is number &&
+        data.durationSec >= 1 &&
+        data.durationSec <= 86400 &&
+        data.sizeBytes is number &&
+        data.sizeBytes >= 0 &&
+        data.sizeBytes <= 10737418240 &&
+        data.resolution is string &&
+        data.resolution.size() >= 1 &&
+        data.resolution.size() <= 40 &&
+        data.captureMode is string &&
+        data.captureMode.size() <= 20 &&
+        data.captureMode in ['screen_cam', 'screen_only', 'cam_only', 'tab_audio'] &&
+        data.containerFormat is string &&
+        data.containerFormat.size() <= 10 &&
+        data.containerFormat in ['webm', 'mp4'] &&
+        data.driveSynced is bool &&
+        data.driveFileId is string &&
+        data.driveFileId.size() >= 0 &&
+        data.driveFileId.size() <= 128 &&
+        data.driveWebViewLink is string &&
+        data.driveWebViewLink.size() >= 0 &&
+        data.driveWebViewLink.size() <= 500 &&
+        data.shareAccess is string &&
+        data.shareAccess.size() <= 20 &&
+        data.shareAccess in ['anyoneWithLink', 'restricted'] &&
+        data.transcript is string &&
+        data.transcript.size() >= 0 &&
+        data.transcript.size() <= 5000 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp &&
+        data.updatedAt == request.time;
+    }
+
+    // Collection 1: Public User Workspace Profile (Non-PII)
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false;
+
+      allow create: if isVerifiedUser() &&
+        isValidId(userId) &&
+        isValidUserPublicProfile(incoming(), userId) &&
+        incoming().createdAt == request.time;
+
+      allow update: if isVerifiedUser() &&
+        isValidId(userId) &&
+        isValidUserPublicProfile(incoming(), userId) &&
+        isOwner(userId) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'displayName',
+          'driveFolder',
+          'driveConnected',
+          'updatedAt'
+        ]);
+
+      allow delete: if isVerifiedUser() &&
+        isValidId(userId) &&
+        isOwner(userId);
+
+      // Subcollection: Isolated Private PII (Email)
+      match /private/{docId} {
+        allow get: if isOwner(userId) &&
+          isValidId(userId) &&
+          docId == 'info' &&
+          exists(/databases/$(database)/documents/users/$(userId));
+        allow list: if false;
+
+        allow create: if isVerifiedUser() &&
+          isValidId(userId) &&
+          docId == 'info' &&
+          isValidUserPrivateInfo(incoming(), userId) &&
+          (
+            exists(/databases/$(database)/documents/users/$(userId)) ||
+            existsAfter(/databases/$(database)/documents/users/$(userId))
+          );
+
+        allow update: if isVerifiedUser() &&
+          isValidId(userId) &&
+          docId == 'info' &&
+          isValidUserPrivateInfo(incoming(), userId) &&
+          isOwner(userId) &&
+          incoming().uid == existing().uid &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['email', 'updatedAt']) &&
+          exists(/databases/$(database)/documents/users/$(userId));
+
+        allow delete: if isVerifiedUser() &&
+          isValidId(userId) &&
+          docId == 'info' &&
+          isOwner(userId);
+      }
+    }
+
+    // Collection 2: Loom-Style Shared Recordings
+    match /recordings/{recordingId} {
+      // Anyone can view a shared recording with anyoneWithLink, or the owner can view their own restricted recording
+      allow get: if isValidId(recordingId) && (
+        existing().shareAccess == 'anyoneWithLink' ||
+        (isSignedIn() && existing().ownerId == request.auth.uid)
+      );
+
+      // Pillar 8: Query Enforcer on list (no get/exists inside list)
+      allow list: if existing().shareAccess == 'anyoneWithLink' ||
+        (isSignedIn() && existing().ownerId == request.auth.uid);
+
+      allow create: if isVerifiedUser() &&
+        isValidId(recordingId) &&
+        isValidRecordingDocument(incoming(), recordingId) &&
+        incoming().createdAt == request.time &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid));
+
+      allow update: if isVerifiedUser() &&
+        isValidId(recordingId) &&
+        isValidRecordingDocument(incoming(), recordingId) &&
+        existing().ownerId == request.auth.uid &&
+        incoming().id == existing().id &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt && (
+          // Action 1: Trim or Transcode Update
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'durationSec',
+            'sizeBytes',
+            'containerFormat',
+            'driveSynced',
+            'driveFileId',
+            'driveWebViewLink',
+            'shareAccess',
+            'updatedAt'
+          ]) ||
+          // Action 2: Metadata / Title / Description / Transcript Update
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'title',
+            'description',
+            'transcript',
+            'updatedAt'
+          ])
+        );
+
+      allow delete: if isVerifiedUser() &&
+        isValidId(recordingId) &&
+        existing().ownerId == request.auth.uid;
+    }
+  }
+}

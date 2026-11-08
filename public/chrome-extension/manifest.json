@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "ScapRecord — Free Screen & Camera Recorder for Google Drive",
+  "short_name": "ScapRecord",
+  "version": "2.4.0",
+  "description": "Record your screen, tab, and webcam bubble in 60fps and instantly share via Google Drive on scaprecord.site.",
+  "homepage_url": "https://scaprecord.site",
+  "permissions": [
+    "tabCapture",
+    "desktopCapture",
+    "offscreen",
+    "storage",
+    "activeTab",
+    "scripting",
+    "identity",
+    "notifications"
+  ],
+  "host_permissions": [
+    "https://www.googleapis.com/*",
+    "https://scaprecord.site/*"
+  ],
+  "oauth2": {
+    "client_id": "635180461858-1n6agaf5vp74puks4um70sl36dlaqg75.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/drive.file"
+    ]
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "ScapRecord — Start Recording"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

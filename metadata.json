@@ -1,0 +1,6 @@
+{
+  "name": "ScapRecord",
+  "description": "Free screen, camera, and Chrome extension video recording studio with automatic Google Drive cloud syncing and spatial 3D screening for scaprecord.site.",
+  "requestFramePermissions": ["camera", "microphone", "display-capture"],
+  "majorCapabilities": []
+}
