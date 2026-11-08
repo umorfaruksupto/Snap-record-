@@ -100,6 +100,11 @@ export interface RecordingItem {
   backgroundPreset?: string;
   trimStartSec?: number;
   trimEndSec?: number;
+  isFavorite?: boolean;
+  isWatchLater?: boolean;
+  watchedAt?: string;
+  folderId?: string;
+  workspaceId?: string;
   reactions: {
     fire: number;
     thumbsUp: number;

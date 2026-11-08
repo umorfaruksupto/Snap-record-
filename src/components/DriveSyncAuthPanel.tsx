@@ -103,7 +103,7 @@ export const DriveSyncAuthPanel: React.FC<DriveSyncAuthPanelProps> = ({
   onRequestPermissionUpdate,
 }) => {
   const [driveFolderInput, setDriveFolderInput] = useState(
-    account?.driveFolder || '/ScapRecord Cloud Clips'
+    account?.driveFolder || '/SnapRecord Cloud Clips'
   );
   const [folderSavedToast, setFolderSavedToast] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -118,7 +118,7 @@ export const DriveSyncAuthPanel: React.FC<DriveSyncAuthPanelProps> = ({
 
   const handleSaveFolder = (e: React.FormEvent) => {
     e.preventDefault();
-    const cleaned = driveFolderInput.trim() || '/ScapRecord Cloud Clips';
+    const cleaned = driveFolderInput.trim() || '/SnapRecord Cloud Clips';
     setDriveFolderInput(cleaned);
     onUpdateDriveFolder(cleaned);
     setFolderSavedToast(true);
@@ -333,113 +333,124 @@ export const DriveSyncAuthPanel: React.FC<DriveSyncAuthPanelProps> = ({
               </div>
             </div>
 
-            {/* Mobile Card List (Visible on < md screens) */}
-            <div className="mt-4 md:hidden space-y-3">
-              {recordings.map((rec) => (
-                <div
-                  key={rec.id}
-                  className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 space-y-2.5 text-xs"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="font-semibold text-slate-900 leading-snug">
-                      {rec.title}
-                    </div>
-                    <span className="font-mono text-slate-600 tabular-nums whitespace-nowrap shrink-0">
-                      {formatFileSize(rec.sizeBytes)}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200/80">
-                    <div>
-                      {rec.driveSynced ? (
-                        <span className="text-emerald-700 font-semibold">
-                          Synced · {rec.shareAccess === 'anyoneWithLink' ? 'Public' : 'Private'}
-                        </span>
-                      ) : (
-                        <span className="text-slate-600 font-medium">Local Only</span>
-                      )}
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      {rec.driveSynced ? (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => handleCopyShareLink(rec)}
-                            aria-label={`Copy Drive link for ${rec.title}`}
-                            className="min-h-[36px] inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 font-medium text-xs transition-colors whitespace-nowrap shrink-0"
-                          >
-                            {copiedId === rec.id ? (
-                              <>
-                                <Check className="h-3.5 w-3.5 text-emerald-600" aria-hidden="true" />
-                                <span>Copied</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="h-3.5 w-3.5" aria-hidden="true" />
-                                <span>Copy URL</span>
-                              </>
-                            )}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              onRequestPermissionUpdate(
-                                rec,
-                                rec.shareAccess === 'anyoneWithLink'
-                                  ? 'restricted'
-                                  : 'anyoneWithLink'
-                              )
-                            }
-                            className="min-h-[36px] px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 font-medium text-xs transition-colors whitespace-nowrap shrink-0"
-                          >
-                            {rec.shareAccess === 'anyoneWithLink'
-                              ? 'Restrict'
-                              : 'Share'}
-                          </button>
-                        </>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => onSyncRecordingToDrive(rec)}
-                          className="min-h-[36px] inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 text-xs transition-colors whitespace-nowrap shrink-0"
-                        >
-                          <UploadCloud className="h-3.5 w-3.5" aria-hidden="true" />
-                          <span>Sync to Drive</span>
-                        </button>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={() => onRequestDeleteRecording(rec)}
-                        aria-label={`Delete ${rec.title}`}
-                        className="min-h-[36px] min-w-[36px] inline-flex items-center justify-center p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Desktop Drive File Table (Visible on >= md screens) */}
-            <div className="mt-4 hidden md:block overflow-x-auto">
-              <table className="w-full text-left border-collapse table-fixed">
-                <thead>
-                  <tr className="border-b border-slate-200 text-[11px] font-semibold text-slate-600">
-                    <th className="w-[36%] py-2.5 pr-2">Recording Title</th>
-                    <th className="w-[14%] py-2.5 px-2 text-right">Size</th>
-                    <th className="w-[20%] py-2.5 px-2">Drive Status</th>
-                    <th className="w-[30%] py-2.5 pl-2 text-right">Sharing & Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 text-xs">
+            {recordings.length === 0 ? (
+              <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/70 p-8 text-center">
+                <p className="text-xs font-medium text-slate-700">
+                  No recordings synced yet.
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Record a clip in the Recorder Studio to upload and generate a shareable Google Drive link.
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Mobile Card List (Visible on < md screens) */}
+                <div className="mt-4 md:hidden space-y-3">
                   {recordings.map((rec) => (
-                    <tr key={rec.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="py-3 pr-2 font-medium text-slate-900 truncate">
-                        {rec.title}
-                      </td>
+                    <div
+                      key={rec.id}
+                      className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 space-y-2.5 text-xs"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="font-semibold text-slate-900 leading-snug">
+                          {rec.title}
+                        </div>
+                        <span className="font-mono text-slate-600 tabular-nums whitespace-nowrap shrink-0">
+                          {formatFileSize(rec.sizeBytes)}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200/80">
+                        <div>
+                          {rec.driveSynced ? (
+                            <span className="text-emerald-700 font-semibold">
+                              Synced · {rec.shareAccess === 'anyoneWithLink' ? 'Public' : 'Private'}
+                            </span>
+                          ) : (
+                            <span className="text-slate-600 font-medium">Local Only</span>
+                          )}
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {rec.driveSynced ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyShareLink(rec)}
+                                aria-label={`Copy Drive link for ${rec.title}`}
+                                className="min-h-[36px] inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 font-medium text-xs transition-colors whitespace-nowrap shrink-0"
+                              >
+                                {copiedId === rec.id ? (
+                                  <>
+                                    <Check className="h-3.5 w-3.5 text-emerald-600" aria-hidden="true" />
+                                    <span>Copied</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                                    <span>Copy URL</span>
+                                  </>
+                                )}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  onRequestPermissionUpdate(
+                                    rec,
+                                    rec.shareAccess === 'anyoneWithLink'
+                                      ? 'restricted'
+                                      : 'anyoneWithLink'
+                                  )
+                                }
+                                className="min-h-[36px] px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 font-medium text-xs transition-colors whitespace-nowrap shrink-0"
+                              >
+                                {rec.shareAccess === 'anyoneWithLink'
+                                  ? 'Restrict'
+                                  : 'Share'}
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => onSyncRecordingToDrive(rec)}
+                              className="min-h-[36px] inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 text-xs transition-colors whitespace-nowrap shrink-0"
+                            >
+                              <UploadCloud className="h-3.5 w-3.5" aria-hidden="true" />
+                              <span>Sync to Drive</span>
+                            </button>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => onRequestDeleteRecording(rec)}
+                            aria-label={`Delete ${rec.title}`}
+                            className="min-h-[36px] min-w-[36px] inline-flex items-center justify-center p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop Drive File Table (Visible on >= md screens) */}
+                <div className="mt-4 hidden md:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse table-fixed">
+                    <thead>
+                      <tr className="border-b border-slate-200 text-[11px] font-semibold text-slate-600">
+                        <th className="w-[36%] py-2.5 pr-2">Recording Title</th>
+                        <th className="w-[14%] py-2.5 px-2 text-right">Size</th>
+                        <th className="w-[20%] py-2.5 px-2">Drive Status</th>
+                        <th className="w-[30%] py-2.5 pl-2 text-right">Sharing & Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 text-xs">
+                      {recordings.map((rec) => (
+                        <tr key={rec.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="py-3 pr-2 font-medium text-slate-900 truncate">
+                            {rec.title}
+                          </td>
                       <td className="py-3 px-2 text-right font-mono text-slate-700 tabular-nums whitespace-nowrap">
                         {formatFileSize(rec.sizeBytes)}
                       </td>
@@ -515,8 +526,10 @@ export const DriveSyncAuthPanel: React.FC<DriveSyncAuthPanelProps> = ({
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
+                  </table>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

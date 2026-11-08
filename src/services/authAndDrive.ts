@@ -379,9 +379,6 @@ export const googleSignIn = async (): Promise<{
     const credential = GoogleAuthProvider.credentialFromResult(result);
     cachedAccessToken = credential?.accessToken || '';
     return { user: result.user, accessToken: cachedAccessToken };
-  } catch (error: unknown) {
-    console.error('Sign in error:', error);
-    throw error;
   } finally {
     isSigningIn = false;
   }
